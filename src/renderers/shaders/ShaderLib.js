@@ -9,6 +9,99 @@
 
 THREE.ShaderLib = {
 
+
+    'sky': {
+        vertexShader: "varying vec3 pos;" +
+            "varying vec3 vFogPosition;\n" +
+            "varying float vFar;" +
+            "void main() {\n" +
+
+
+        "float near   = projectionMatrix[3][2]/(projectionMatrix[2][2]-1.0);" +
+            "float far    = projectionMatrix[3][2]/(projectionMatrix[2][2]+1.0);" +
+            "vFar = far * 10.0;" +
+            " vec3 nposition = (position * ((near+far)/2.0 + near)) + cameraPosition;\n" +
+            " vec4 mvPosition = viewMatrix * vec4( nposition, 1.0 );\n" +
+            " pos = position;" +
+            "   gl_Position = projectionMatrix * mvPosition;\n" +
+            "vFogPosition = position.xyz; \n" +
+            "}    \n",
+
+        fragmentShader:
+
+        THREE.ShaderChunk["lights_phong_pars_fragment"] + "\n" +
+            THREE.ShaderChunk["fog_pars_fragment"] + "\n" +
+
+        "uniform samplerCube texture;\n" +
+            "varying vec3 pos;" +
+            "uniform vec3 HorizonColor;" +
+            "uniform vec3 ApexColor;" +
+            "uniform float colorBlend;" +
+            "uniform float fogBlend;" +
+            "varying vec3 vFogPosition;" +
+            "varying float vFar;" +
+            "void main() {\n" +
+
+        "   vec4 cubeColor = textureCube(texture,pos);\n" +
+            "   vec4 tFogColor = cubeColor;\n" +
+            "   float dotZ = abs(dot(normalize(pos),vec3(0.0,0.0,1.0)));\n" +
+            "   vec3 skycolor = mix(HorizonColor,ApexColor,dotZ);\n" +
+            "#ifdef USE_FOG\n" +
+            "float depth = vFar;\n" +
+            "#ifdef FOG_EXP2\n" +
+            "const float LOG2 = 1.442695;\n" +
+            "float fogFactor = exp2( - fogDensity * fogDensity * depth * depth * LOG2 );\n" +
+            "fogFactor = 1.0 - clamp( fogFactor, 0.0, 1.0 );\n" +
+            "#if MAX_DIR_LIGHTS > 0\n" +
+
+        "tFogColor.xyz = aerialPerspective(gl_FragColor.xyz, vFar,cameraPosition.xzy, normalize(vFogPosition.xyz).xzy);\n" +
+            "#endif\n" +
+            "#else\n" +
+            "float fogFactor = smoothstep( fogNear, fogFar, depth );\n" +
+            "tFogColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );\n" +
+            "#endif\n" +
+            "#endif\n" +
+			"   vec4 temp = vec4(mix(cubeColor.xyz,skycolor,colorBlend),1.0);\n" +
+            "   gl_FragColor = vec4(mix(temp.xyz,tFogColor.xyz,fogBlend),0.0);\n" +
+            "}\n",
+
+        //the default shader - the one used by the analytic solver, just has some simple stuff
+        //note that this could be changed to do just life and lifespan, and calculate the 
+        //size and color from to uniforms. Im not going to bother
+        attributes: {
+
+
+        },
+        uniforms: THREE.UniformsUtils.merge([
+            THREE.UniformsLib["fog"],
+            THREE.UniformsLib["lights"], {
+
+                texture: {
+                    type: "t",
+                    value: null
+                },
+                fogBlend: {
+                    type: "f",
+                    value: 0
+                },
+                colorBlend: {
+                    type: "f",
+                    value: 1
+                },
+                ApexColor: {
+                    type: "c",
+                    value: new THREE.Color(0xCCCCCC)
+                },
+                HorizonColor: {
+                    type: "c",
+                    value: new THREE.Color(0x999999)
+                },
+
+            }
+        ])
+
+    },
+
 	'basic': {
 
 		uniforms: THREE.UniformsUtils.merge( [
@@ -68,7 +161,7 @@ THREE.ShaderLib = {
 			THREE.ShaderChunk[ "alphamap_pars_fragment" ],
 			THREE.ShaderChunk[ "lightmap_pars_fragment" ],
 			THREE.ShaderChunk[ "envmap_pars_fragment" ],
-			THREE.ShaderChunk[ "fog_pars_fragment" ],
+			//THREE.ShaderChunk[ "fog_pars_fragment" ],
 			THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
 			THREE.ShaderChunk[ "specularmap_pars_fragment" ],
 			THREE.ShaderChunk[ "logdepthbuf_pars_fragment" ],
@@ -85,11 +178,11 @@ THREE.ShaderLib = {
 				THREE.ShaderChunk[ "lightmap_fragment" ],
 				THREE.ShaderChunk[ "color_fragment" ],
 				THREE.ShaderChunk[ "envmap_fragment" ],
-				THREE.ShaderChunk[ "shadowmap_fragment" ],
+				THREE.ShaderChunk[ "shadowmap_fragment_basic" ],
 
 				THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
 
-				THREE.ShaderChunk[ "fog_fragment" ],
+				//THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
 
@@ -216,7 +309,7 @@ THREE.ShaderLib = {
 
 				THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
 
-				THREE.ShaderChunk[ "fog_fragment" ],
+			//	THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
 
@@ -250,6 +343,7 @@ THREE.ShaderLib = {
 			"#define PHONG",
 
 			"varying vec3 vViewPosition;",
+			"varying vec3 vFogPosition;",
 			"varying vec3 vNormal;",
 
 			THREE.ShaderChunk[ "map_pars_vertex" ],
@@ -261,9 +355,11 @@ THREE.ShaderLib = {
 			THREE.ShaderChunk[ "skinning_pars_vertex" ],
 			THREE.ShaderChunk[ "shadowmap_pars_vertex" ],
 			THREE.ShaderChunk[ "logdepthbuf_pars_vertex" ],
+			THREE.ShaderChunk["sphericalHarmonicAmbient_pars_vertex"],
 
 			"void main() {",
 
+				"vFogPosition = (modelMatrix * vec4(position,1.0)).xyz; \n" +
 				THREE.ShaderChunk[ "map_vertex" ],
 				THREE.ShaderChunk[ "lightmap_vertex" ],
 				THREE.ShaderChunk[ "color_vertex" ],
@@ -286,6 +382,7 @@ THREE.ShaderLib = {
 				THREE.ShaderChunk[ "envmap_vertex" ],
 				THREE.ShaderChunk[ "lights_phong_vertex" ],
 				THREE.ShaderChunk[ "shadowmap_vertex" ],
+				THREE.ShaderChunk["sphericalHarmonicAmbient_vertex"],
 
 			"}"
 
@@ -300,24 +397,26 @@ THREE.ShaderLib = {
 			"uniform vec3 emissive;",
 			"uniform vec3 specular;",
 			"uniform float shininess;",
-
+			 "varying vec3 vFogPosition;",
 			THREE.ShaderChunk[ "color_pars_fragment" ],
 			THREE.ShaderChunk[ "map_pars_fragment" ],
 			THREE.ShaderChunk[ "alphamap_pars_fragment" ],
 			THREE.ShaderChunk[ "lightmap_pars_fragment" ],
 			THREE.ShaderChunk[ "envmap_pars_fragment" ],
-			THREE.ShaderChunk[ "fog_pars_fragment" ],
+			
 			THREE.ShaderChunk[ "lights_phong_pars_fragment" ],
+			THREE.ShaderChunk[ "fog_pars_fragment" ],
 			THREE.ShaderChunk[ "shadowmap_pars_fragment" ],
 			THREE.ShaderChunk[ "bumpmap_pars_fragment" ],
 			THREE.ShaderChunk[ "normalmap_pars_fragment" ],
 			THREE.ShaderChunk[ "specularmap_pars_fragment" ],
 			THREE.ShaderChunk[ "logdepthbuf_pars_fragment" ],
-
+			THREE.ShaderChunk["sphericalHarmonicAmbient_pars_fragment"],
 			"void main() {",
 
 			"	gl_FragColor = vec4( vec3( 1.0 ), opacity );",
 
+				THREE.ShaderChunk["sphericalHarmonicAmbient_fragment"],
 				THREE.ShaderChunk[ "logdepthbuf_fragment" ],
 				THREE.ShaderChunk[ "map_fragment" ],
 				THREE.ShaderChunk[ "alphamap_fragment" ],
@@ -401,7 +500,7 @@ THREE.ShaderLib = {
 				THREE.ShaderChunk[ "alphatest_fragment" ],
 				THREE.ShaderChunk[ "color_fragment" ],
 				THREE.ShaderChunk[ "shadowmap_fragment" ],
-				THREE.ShaderChunk[ "fog_fragment" ],
+				//THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
 
@@ -475,7 +574,7 @@ THREE.ShaderLib = {
 
 				THREE.ShaderChunk[ "logdepthbuf_fragment" ],
 				THREE.ShaderChunk[ "color_fragment" ],
-				THREE.ShaderChunk[ "fog_fragment" ],
+				//THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
 
@@ -1053,7 +1152,7 @@ THREE.ShaderLib = {
 
 				THREE.ShaderChunk[ "shadowmap_fragment" ],
 				THREE.ShaderChunk[ "linear_to_gamma_fragment" ],
-				THREE.ShaderChunk[ "fog_fragment" ],
+				//THREE.ShaderChunk[ "fog_fragment" ],
 
 			"}"
 

@@ -58,6 +58,9 @@ THREE.Object3D = function () {
 	this.matrix = new THREE.Matrix4();
 	this.matrixWorld = new THREE.Matrix4();
 
+    this.orthoMatrixWorld = new THREE.Matrix4();
+    this.inheritScale = true;
+    
 	this.matrixAutoUpdate = true;
 	this.matrixWorldNeedsUpdate = false;
 
@@ -501,23 +504,45 @@ THREE.Object3D.prototype = {
 
 	updateMatrixWorld: function ( force ) {
 
-		if ( this.matrixAutoUpdate === true ) this.updateMatrix();
+		  if (this.matrixAutoUpdate === true) this.updateMatrix();
 
-		if ( this.matrixWorldNeedsUpdate === true || force === true ) {
+        if (this.matrixWorldNeedsUpdate === true || force === true) {
 
-			if ( this.parent === undefined ) {
+            if (this.parent === undefined) {
 
-				this.matrixWorld.copy( this.matrix );
+                this.matrixWorld.copy(this.matrix);
 
-			} else {
+            } else {
 
-				this.matrixWorld.multiplyMatrices( this.parent.matrixWorld, this.matrix );
+                if (this.inheritScale)
+                    this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
+                else {
+                    this.matrixWorld.multiplyMatrices(this.parent.matrixWorld, this.matrix);
+                    var tx, ty, tz;
+                    tx = this.matrixWorld.elements[12];
+                    ty = this.matrixWorld.elements[13];
+                    tz = this.matrixWorld.elements[14];
+                    this.matrixWorld.multiplyMatrices(this.parent.orthoMatrixWorld, this.matrix);
+                    this.matrixWorld.elements[12] = tx;
+                    this.matrixWorld.elements[13] = ty;
+                    this.matrixWorld.elements[14] = tz;
+                }
+            }
 
-			}
+            this.orthoMatrixWorld.copy(this.matrixWorld);
+            if (this instanceof THREE.Bone) {
+                if(this.skin)
+                	this.orthoMatrixWorld.orthogonalize(this.skin.matrixWorld);
+                
 
-			this.matrixWorldNeedsUpdate = false;
+            } else {
 
-			force = true;
+                this.orthoMatrixWorld.orthogonalize();
+            }
+
+            this.matrixWorldNeedsUpdate = false;
+
+            force = true;
 
 		}
 

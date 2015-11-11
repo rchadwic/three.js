@@ -1,6 +1,5 @@
 // File:src/Three.js
 
-"use strict"
 /**
  * @author mrdoob / http://mrdoob.com/
  */
@@ -4458,7 +4457,9 @@ THREE.Matrix4.prototype = {
 		};
 
 	}(),
-	  orthogonalize: function(p) {
+	 orthogonalize: function(p) {
+
+
 
 
 
@@ -4467,19 +4468,16 @@ THREE.Matrix4.prototype = {
         var te = this.elements;
         var me = temp_m.elements;
 
-        
-
-        var scaleX = 1 / Math.sqrt(me[0] * me[0] + me[1] * me[1] + me[2] * me[2]);
-        var scaleY = 1 / Math.sqrt(me[4] * me[4] + me[5] * me[5] + me[6] * me[6]);
-        var scaleZ = 1 / Math.sqrt(me[8] * me[8] + me[9] * me[9] + me[10] * me[10]);
-
+        var scaleX = 1 / temp_v1.set(me[0], me[1], me[2]).length();
+        var scaleY = 1 / temp_v1.set(me[4], me[5], me[6]).length();
+        var scaleZ = 1 / temp_v1.set(me[8], me[9], me[10]).length();
 
         if (p) {
             var pe = p.elements;
 
-            var px = 1 / Math.sqrt(pe[0] * pe[0] + pe[1] * pe[1] + pe[2] * pe[2]);
-        	var py = 1 / Math.sqrt(pe[4] * pe[4] + pe[5] * pe[5] + pe[6] * pe[6]);
-        	var pz = 1 / Math.sqrt(pe[8] * pe[8] + pe[9] * pe[9] + pe[10] * pe[10]);
+            var px = temp_v1.set(pe[0], pe[1], pe[2]).length();
+            var py = temp_v1.set(pe[4], pe[5], pe[6]).length();
+            var pz = temp_v1.set(pe[8], pe[9], pe[10]).length();
 
             te[0] = me[0] * scaleX * px;
             te[1] = me[1] * scaleX * px;
@@ -7798,10 +7796,10 @@ THREE.Object3D.prototype = {
 
             this.orthoMatrixWorld.copy(this.matrixWorld);
             if (this instanceof THREE.Bone) {
-                if(this.skin)
-                	this.orthoMatrixWorld.orthogonalize(this.skin.matrixWorld);
-                
-
+                var skin = this;
+                while (!(skin instanceof THREE.SkinnedMesh))
+                    skin = skin.parent;
+                this.orthoMatrixWorld.orthogonalize(skin.matrixWorld);
             } else {
 
                 this.orthoMatrixWorld.orthogonalize();
@@ -15497,7 +15495,7 @@ THREE.SkinnedMesh = function ( geometry, material, useVertexTexture ) {
 	this.normalizeSkinWeights();
 
 	this.updateMatrixWorld( true );
-	this.bind( new THREE.Skeleton( bones, this.geometry.boneInverses || undefined, useVertexTexture ) );
+	this.bind( new THREE.Skeleton( bones, undefined, useVertexTexture ) );
 
 };
 
@@ -16035,8 +16033,6 @@ THREE.Scene = function () {
 
 	this.__objectsAdded = [];
 	this.__objectsRemoved = [];
-	this.__skins = [];
-	this.__pointclouds = [];
 
 };
 
@@ -16044,14 +16040,6 @@ THREE.Scene.prototype = Object.create( THREE.Object3D.prototype );
 
 THREE.Scene.prototype.__addObject = function ( object ) {
 
-	if ( object instanceof THREE.SkinnedMesh )
-	{
-		this.__skins.push(object);
-	}
-	if ( object instanceof THREE.PointCloud )
-	{
-		this.__pointclouds.push(object);
-	}
 	if ( object instanceof THREE.Light ) {
 
 		if ( this.__lights.indexOf( object ) === - 1 ) {
@@ -16095,14 +16083,6 @@ THREE.Scene.prototype.__addObject = function ( object ) {
 
 THREE.Scene.prototype.__removeObject = function ( object ) {
 
-	if ( object instanceof THREE.SkinnedMesh )
-	{
-		this.__skins.splice(this.__skins.indexOf(object),1);
-	}
-	if ( object instanceof THREE.PointCloud )
-	{
-		this.__pointclouds.splice(this.__pointclouds.indexOf(object),1);
-	}
 	if ( object instanceof THREE.Light ) {
 
 		var i = this.__lights.indexOf( object );
@@ -16208,21 +16188,21 @@ THREE.FogExp2 = function ( color, density ) {
     this.vAtmosphereColor = new THREE.Color(0x000000);
 
     this.vAtmosphereColor.r = 0.0;
-    this.vAtmosphereColor.g = 0.02;
-    this.vAtmosphereColor.b = 0.04;
+    this.vAtmosphereColor.r = 0.02;
+    this.vAtmosphereColor.r = 0.04;
 
     this.vAtmosphereDensity = .0005;
 
     this.vHorizonColor = new THREE.Color(0x000000);
     this.vHorizonColor.r = 0.88;
-    this.vHorizonColor.g = 0.94;
-    this.vHorizonColor.b = 0.999;
+    this.vHorizonColor.r = 0.94;
+    this.vHorizonColor.r = 0.999;
 
 
     this.vApexColor = new THREE.Color(0x000000);
     this.vApexColor.r = 0.78;
-    this.vApexColor.g = 0.82;
-    this.vApexColor.b = 0.999;
+    this.vApexColor.r = 0.82;
+    this.vApexColor.r = 0.999;
 
 };
 
@@ -17325,7 +17305,7 @@ THREE.ShaderChunk = {};
 
 // File:src/renderers/shaders/ShaderChunk/alphatest_fragment.glsl
 
-THREE.ShaderChunk[ 'alphatest_fragment'] = "#ifdef ALPHATEST\n\n	if ( gl_FragColor.a < float(ALPHATEST) ) discard;\n\n#endif\n";
+THREE.ShaderChunk[ 'alphatest_fragment'] = "#ifdef ALPHATEST\n\n	if ( gl_FragColor.a < ALPHATEST ) discard;\n\n#endif\n";
 
 // File:src/renderers/shaders/ShaderChunk/lights_lambert_vertex.glsl
 
@@ -17361,7 +17341,7 @@ THREE.ShaderChunk[ 'lights_phong_fragment'] = "vec3 normal = normalize( vNormal 
 
 // File:src/renderers/shaders/ShaderChunk/fog_pars_fragment.glsl
 
-THREE.ShaderChunk[ 'fog_pars_fragment'] = "\n        #ifdef USE_FOG\n\n        uniform vec3 fogColor;\n\n        #ifdef FOG_EXP2\n\n        uniform vec3 vAtmosphereColor; //vec3(0.0, 0.02, 0.04);\n        uniform vec3 vHorizonColor; //vec3(0.88, 0.94, 0.999);\n        uniform vec3 vApexColor; //vec3(0.78, 0.82, 0.999)\n        uniform float vAtmosphereDensity; //.0005\n        uniform float vFalloff;\n        uniform float vFalloffStart;\n              uniform float fogDensity;\n\n        #if MAX_DIR_LIGHTS > 0\n         \n        \n\n        vec3 atmosphereColor(vec3 rayDirection){\n            float a = max(0.0, dot(rayDirection, vec3(0.0, 1.0, 0.0)));\n            vec3 skyColor = mix(vHorizonColor, vApexColor, a);\n            float sunTheta = max( dot(rayDirection, directionalLightDirection[0].xzy), 0.0 );\n            return skyColor+directionalLightColor[0]*4.0*pow(sunTheta, 16.0)*0.5;\n        }\n\n        vec3 applyFog(vec3 albedo, float dist, vec3 rayOrigin, vec3 rayDirection){\n            float fogDensityA = fogDensity ;\n            float fog = exp((-rayOrigin.y*vFalloff)*fogDensityA) * (1.0-exp(-dist*rayDirection.y*vFalloff*fogDensityA))/(rayDirection.y*vFalloff);\n            return mix(albedo, fogColor, clamp(fog, 0.0, 1.0));\n        }\n\n        vec3 aerialPerspective(vec3 albedo, float dist, vec3 rayOrigin, vec3 rayDirection){\n         rayOrigin.y += vFalloffStart;\n            vec3 atmosphere = atmosphereColor(rayDirection)+vAtmosphereColor; \n            atmosphere = mix( atmosphere, atmosphere*.85, clamp(1.0-exp(-dist*vAtmosphereDensity), 0.0, 1.0));\n            vec3 color = mix( applyFog(albedo, dist, rayOrigin, rayDirection), atmosphere, clamp(1.0-exp(-dist*vAtmosphereDensity)-log(rayOrigin.y)/10.0, 0.0, 1.0));\n            return color;\n        }                      \n        #endif\n          #else\n\n               uniform float fogNear;\n               uniform float fogFar;\n\n           #endif\n\n        #endif";
+THREE.ShaderChunk[ 'fog_pars_fragment'] = "\n        #ifdef USE_FOG\n\n        uniform vec3 fogColor;\n\n        	#ifdef FOG_EXP2\n\n        uniform vec3 vAtmosphereColor; //vec3(0.0, 0.02, 0.04);\n        uniform vec3 vHorizonColor; //vec3(0.88, 0.94, 0.999);\n        uniform vec3 vApexColor; //vec3(0.78, 0.82, 0.999)\n        uniform float vAtmosphereDensity; //.0005\n        uniform float vFalloff;\n        uniform float vFalloffStart;\n        		uniform float fogDensity;\n\n        #if MAX_DIR_LIGHTS > 0\n        vec3 horizonColor = vHorizonColor; \n        vec3 zenithColor = vApexColor;\n\n        vec3 atmosphereColor(vec3 rayDirection){\n            float a = max(0.0, dot(rayDirection, vec3(0.0, 1.0, 0.0)));\n            vec3 skyColor = mix(horizonColor, zenithColor, a);\n            float sunTheta = max( dot(rayDirection, directionalLightDirection[0].xzy), 0.0 );\n            return skyColor+directionalLightColor[0]*4.0*pow(sunTheta, 16.0)*0.5;\n        }\n\n        vec3 applyFog(vec3 albedo, float dist, vec3 rayOrigin, vec3 rayDirection){\n            float fogDensityA = fogDensity ;\n            float fog = exp((-rayOrigin.y*vFalloff)*fogDensityA) * (1.0-exp(-dist*rayDirection.y*vFalloff*fogDensityA))/(rayDirection.y*vFalloff);\n            return mix(albedo, fogColor, clamp(fog, 0.0, 1.0));\n        }\n\n        vec3 aerialPerspective(vec3 albedo, float dist, vec3 rayOrigin, vec3 rayDirection){\n         rayOrigin.y += vFalloffStart;\n            vec3 atmosphere = atmosphereColor(rayDirection)+vAtmosphereColor; \n            atmosphere = mix( atmosphere, atmosphere*.85, clamp(1.0-exp(-dist*vAtmosphereDensity), 0.0, 1.0));\n            vec3 color = mix( applyFog(albedo, dist, rayOrigin, rayDirection), atmosphere, clamp(1.0-exp(-dist*vAtmosphereDensity), 0.0, 1.0));\n            return color;\n        }						\n        #endif\n        	#else\n\n        		uniform float fogNear;\n        		uniform float fogFar;\n\n        	#endif\n\n        #endif";
 
 // File:src/renderers/shaders/ShaderChunk/morphnormal_vertex.glsl
 
@@ -17797,8 +17777,8 @@ THREE.ShaderLib = {
             "tFogColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );\n" +
             "#endif\n" +
             "#endif\n" +
-			"   vec4 temp = vec4(mix(cubeColor.xyz,skycolor,colorBlend),1.0);\n" +
-            "   gl_FragColor = vec4(mix(temp.xyz,tFogColor.xyz,fogBlend),0.0);\n" +
+            "   gl_FragColor = vec4(mix(cubeColor.xyz,skycolor,colorBlend),1.0);\n" +
+            "   gl_FragColor = vec4(mix(gl_FragColor.xyz,tFogColor.xyz,fogBlend),1.0);\n" +
             "}\n",
 
         //the default shader - the one used by the analytic solver, just has some simple stuff
@@ -17822,15 +17802,15 @@ THREE.ShaderLib = {
                 },
                 colorBlend: {
                     type: "f",
-                    value: 1
+                    value: 0
                 },
                 ApexColor: {
                     type: "c",
-                    value: new THREE.Color(0xCCCCCC)
+                    value: new THREE.Color(0x0077FF)
                 },
                 HorizonColor: {
                     type: "c",
-                    value: new THREE.Color(0x999999)
+                    value: new THREE.Color(0xffffff)
                 },
 
             }
@@ -21673,10 +21653,8 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	function setupVertexAttributes( material, programAttributes, geometryAttributes, startIndex ) {
 
-		var keys = Object.keys(programAttributes)
-		for ( var i = 0; i < keys.length; i++ ) {
+		for ( var attributeName in programAttributes ) {
 
-			var attributeName = keys[i];
 			var attributePointer = programAttributes[ attributeName ];
 			var attributeItem = geometryAttributes[ attributeName ];
 
@@ -22440,12 +22418,15 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			}
 
-			
+			for ( var i = 0, l = object.children.length; i < l; i ++ ) {
+
+				updateSkeletons( object.children[ i ] );
+
+			}
 
 		}
 
-		for( i = 0; i < scene.__skins.length; i++)
-			updateSkeletons( scene.__skins[i] );
+		updateSkeletons( scene );
 
 		camera.matrixWorldInverse.getInverse( camera.matrixWorld );
 
@@ -24629,13 +24610,12 @@ THREE.WebGLRenderer = function ( parameters ) {
 		}
 
 	};
-	this.flipCulling = false;
+
 	this.setMaterialFaces = function ( material ) {
 
 		var doubleSided = material.side === THREE.DoubleSide;
 		var flipSided = material.side === THREE.BackSide;
-		if(this.flipCulling)
-			flipSided = material.side === THREE.FrontSide;
+
 		if ( _oldDoubleSided !== doubleSided ) {
 
 			if ( doubleSided ) {
@@ -24763,17 +24743,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 				_gl.blendEquation( _gl.FUNC_ADD );
 				_gl.blendFunc( _gl.ZERO, _gl.ONE_MINUS_SRC_COLOR );
 
-			} 
-			else if ( blending === 9 ) {
-
-				// TODO: Find blendFuncSeparate() combination
-				_gl.enable( _gl.BLEND );
-				_gl.blendEquationSeparate( _gl.FUNC_ADD, _gl.FUNC_ADD );
-				_gl.blendFuncSeparate( _gl.ONE, _gl.ZERO, _gl.ONE, _gl.ZERO );
-
-
-			} 
-			else if ( blending === THREE.MultiplyBlending ) {
+			} else if ( blending === THREE.MultiplyBlending ) {
 
 				// TODO: Find blendFuncSeparate() combination
 				_gl.enable( _gl.BLEND );
@@ -25795,11 +25765,10 @@ THREE.WebGLProgram = ( function () {
 
 			prefix_vertex = [
 
-				
-				customDefines,
 				"precision " + parameters.precision + " float;",
 				"precision " + parameters.precision + " int;",
 
+				customDefines,
 
 				parameters.supportsVertexTextures ? "#define VERTEX_TEXTURES" : "",
 
@@ -25900,11 +25869,10 @@ THREE.WebGLProgram = ( function () {
 
 			prefix_fragment = [
 
-				( parameters.bumpMap || parameters.normalMap ) ? "#extension GL_OES_standard_derivatives : enable" : "",
 				"precision " + parameters.precision + " float;",
 				"precision " + parameters.precision + " int;",
 
-			
+				( parameters.bumpMap || parameters.normalMap ) ? "#extension GL_OES_standard_derivatives : enable" : "",
 
 				customDefines,
 
@@ -29685,10 +29653,6 @@ THREE.Animation.prototype.debug = function(size) {
     this.debugroot = debugroot;
 }
 
-var tempAniPos = new THREE.Vector3();
-var tempAniScale = new THREE.Vector3(1,1,1);
-var tempAniQuat = new THREE.Quaternion();
-var tempAniMatrix = new THREE.Matrix4();
 THREE.Animation.prototype.setKey = function(keyf) {
 
     if (!this.data) return;
@@ -29698,47 +29662,31 @@ THREE.Animation.prototype.setKey = function(keyf) {
     var l = keyf - Math.floor(keyf);
     var l2 = 1 - l;
 
-    for (var h = 0, hl = this.data.hierarchy.length; h < hl; h++) {
+    for (var h = 0, hl = this.hierarchy.length; h < hl; h++) {
         var object = this.hierarchy[h];
         var key = this.data.hierarchy[h].keys[Math.floor(keyf)];
         var key2 = this.data.hierarchy[h].keys[Math.floor(keyf + 1)];
 
-        object.matrixAutoUpdate = false;
+        object.matrixAutoUpdate = true;
         //object.matrix.copy(key.matrix);
         //object.updateMatrixWorld();
         //object.matrixWorldNeedsUpdate = true;
 
         if (key && key2) {
 
-/*
- key.parentspacePos = new THREE.Vector3();
-            key.parentspaceScl = new THREE.Vector3();
-            key.parentspaceRot = new THREE.Quaternion()
-            */
-        	var keypos =  key.parentspacePos || key.pos;
-        	var keyrot =  key.parentspaceRot || key.rot;
-      //  	var keyscl =  key.parentspaceScl || key.scl;
+            object.position.x = key.pos[0] * l2 + key2.pos[0] * l;
+            object.position.y = key.pos[1] * l2 + key2.pos[1] * l;
+            object.position.z = key.pos[2] * l2 + key2.pos[2] * l;
 
-        	var key2pos =  key2.parentspacePos || key2.pos;
-        	var key2rot =  key2.parentspaceRot || key2.rot;
-        //	var key2scl =  key2.parentspaceScl || key2.scl;
+            object.scale.x = key.scl[0] * l2 + key2.scl[0] * l;
+            object.scale.y = key.scl[1] * l2 + key2.scl[1] * l;
+            object.scale.z = key.scl[2] * l2 + key2.scl[2] * l;
 
-            tempAniPos.x = keypos[0] * l2 + key2pos[0] * l;
-            tempAniPos.y = keypos[1] * l2 + key2pos[1] * l;
-            tempAniPos.z = keypos[2] * l2 + key2pos[2] * l;
+            object.quaternion.set(key.rot.x, key.rot.y, key.rot.z, key.rot.w);
+            object.quaternion.slerp(key2.rot, l);
 
-       //     tempAniScale.x = keyscl[0] * l2 + key2scl[0] * l;
-       //     tempAniScale.y = keyscl[1] * l2 + key2scl[1] * l;
-       //     tempAniScale.z = keyscl[2] * l2 + key2scl[2] * l;
 
-            tempAniQuat.set(keyrot.x, keyrot.y, keyrot.z, keyrot.w);
-            tempAniQuat.slerp(key2rot, l);
-
-            tempAniMatrix.compose(tempAniPos,tempAniQuat,tempAniScale);
-            object.matrix.copy(tempAniMatrix);
-            object.matrixWorldNeedsUpdate = true;
-            //object.matrixWorld.multiplyMatrices(this.root.matrixWorld,object.matrix);
-
+            object.updateMatrix();
 
 
             if (object.debugobject) {
@@ -29747,29 +29695,19 @@ THREE.Animation.prototype.setKey = function(keyf) {
             }
         } else if (key) {
 
-        	var keypos =  key.parentspacePos || key.pos;
-        	var keyrot =  key.parentspaceRot || key.rot;
-        	var keyscl =  key.parentspaceScl || key.scl;
+            object.position.x = key.pos[0]
+            object.position.y = key.pos[1]
+            object.position.z = key.pos[2]
 
-            object.position.x = keypos[0]
-            object.position.y = keypos[1]
-            object.position.z = keypos[2]
+            object.scale.x = key.scl[0]
+            object.scale.y = key.scl[1]
+            object.scale.z = key.scl[2]
 
-            object.scale.x = keyscl[0]
-            object.scale.y = keyscl[1]
-            object.scale.z = keyscl[2]
+            object.quaternion.w = key.rot.w;
+            object.quaternion.y = key.rot.y;
+            object.quaternion.z = key.rot.z;
+            object.quaternion.x = key.rot.x;
 
-            object.quaternion.w = keyrot.w;
-            object.quaternion.y = keyrot.y;
-            object.quaternion.z = keyrot.z;
-            object.quaternion.x = keyrot.x;
-
-            //the object matrix is now directly in the space of this.root. No need to walk whole tree updating 
-            //matrix
-			object.updateMatrix();
-            //object.matrixWorld.multiplyMatrices(this.root.matrixWorld,object.matrix);
-
-            
             if (object.debugobject) {
                 object.debugobject.matrix.copy(object.matrix);
                 object.debugobject.updateMatrixWorld();
@@ -29782,7 +29720,6 @@ THREE.Animation.prototype.setKey = function(keyf) {
     if (this.debugroot) {
         this.debugroot.updateMatrixWorld()
     }
-
 
 }
 
@@ -34945,7 +34882,7 @@ THREE.LensFlarePlugin = function () {
 
 		flares.length = 0;
 
-		/*scene.traverseVisible( function ( child ) {
+		scene.traverseVisible( function ( child ) {
 
 			if ( child instanceof THREE.LensFlare ) {
 
@@ -34953,7 +34890,7 @@ THREE.LensFlarePlugin = function () {
 
 			}
 
-		} );*/
+		} );
 
 		if ( flares.length === 0 ) return;
 
@@ -35742,7 +35679,7 @@ THREE.SpritePlugin = function () {
 
 		sprites.length = 0;
 
-		/*scene.traverseVisible( function ( child ) {
+		scene.traverseVisible( function ( child ) {
 
 			if ( child instanceof THREE.Sprite ) {
 
@@ -35750,7 +35687,7 @@ THREE.SpritePlugin = function () {
 
 			}
 
-		} );*/
+		} );
 
 		if ( sprites.length === 0 ) return;
 

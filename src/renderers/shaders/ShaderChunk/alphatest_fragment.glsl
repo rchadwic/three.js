@@ -1,5 +1,5 @@
 #ifdef ALPHATEST
 
-	if ( gl_FragColor.a < ALPHATEST ) discard;
+	if ( gl_FragColor.a < float(ALPHATEST) ) discard;
 
 #endif

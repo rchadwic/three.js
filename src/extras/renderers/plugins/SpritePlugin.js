@@ -85,7 +85,7 @@ THREE.SpritePlugin = function () {
 
 		sprites.length = 0;
 
-		scene.traverseVisible( function ( child ) {
+		/*scene.traverseVisible( function ( child ) {
 
 			if ( child instanceof THREE.Sprite ) {
 
@@ -93,7 +93,7 @@ THREE.SpritePlugin = function () {
 
 			}
 
-		} );
+		} );*/
 
 		if ( sprites.length === 0 ) return;
 

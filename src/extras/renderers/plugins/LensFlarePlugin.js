@@ -109,7 +109,7 @@ THREE.LensFlarePlugin = function () {
 
 		flares.length = 0;
 
-		scene.traverseVisible( function ( child ) {
+		/*scene.traverseVisible( function ( child ) {
 
 			if ( child instanceof THREE.LensFlare ) {
 
@@ -117,7 +117,7 @@ THREE.LensFlarePlugin = function () {
 
 			}
 
-		} );
+		} );*/
 
 		if ( flares.length === 0 ) return;
 

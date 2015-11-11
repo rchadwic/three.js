@@ -344,7 +344,16 @@ THREE.Mesh.prototype.clone = function ( object, recursive ) {
 	if ( object === undefined ) object = new THREE.Mesh( this.geometry, this.material );
 
 	THREE.Object3D.prototype.clone.call( this, object, recursive );
-
+	
+	if (this.animationHandle && this.animationHandle instanceof THREE.Animation) {
+        var animation = new THREE.Animation(
+            object,
+            object.geometry.animation
+        );
+        animation.data = object.geometry.animation;
+        object.animationHandle = animation;
+    }
+    
 	return object;
 
 };

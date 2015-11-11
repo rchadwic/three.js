@@ -2507,8 +2507,10 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 	function setupVertexAttributes( material, programAttributes, geometryAttributes, startIndex ) {
 
-		for ( var attributeName in programAttributes ) {
+		var keys = Object.keys(programAttributes)
+		for ( var i = 0; i < keys.length; i++ ) {
 
+			var attributeName = keys[i];
 			var attributePointer = programAttributes[ attributeName ];
 			var attributeItem = geometryAttributes[ attributeName ];
 
@@ -3272,15 +3274,12 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			}
 
-			for ( var i = 0, l = object.children.length; i < l; i ++ ) {
-
-				updateSkeletons( object.children[ i ] );
-
-			}
+			
 
 		}
 
-		updateSkeletons( scene );
+		for( i = 0; i < scene.__skins.length; i++)
+			updateSkeletons( scene.__skins[i] );
 
 		camera.matrixWorldInverse.getInverse( camera.matrixWorld );
 
@@ -4658,7 +4657,20 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 		} else if ( fog instanceof THREE.FogExp2 ) {
 
-			uniforms.fogDensity.value = fog.density;
+			  if (uniforms.fogDensity)
+                uniforms.fogDensity.value = fog.density;
+            if (uniforms.vFalloff)
+                uniforms.vFalloff.value = fog.vFalloff;
+            if (uniforms.vFalloffStart)
+                uniforms.vFalloffStart.value = fog.vFalloffStart;
+            if (uniforms.vAtmosphereColor)
+                uniforms.vAtmosphereColor.value = fog.vAtmosphereColor;
+            if (uniforms.vAtmosphereDensity)
+                uniforms.vAtmosphereDensity.value = fog.vAtmosphereDensity;
+            if (uniforms.vHorizonColor)
+                uniforms.vHorizonColor.value = fog.vHorizonColor;
+            if (uniforms.vApexColor)
+                uniforms.vApexColor.value = fog.vApexColor;
 
 		}
 
@@ -5451,12 +5463,13 @@ THREE.WebGLRenderer = function ( parameters ) {
 		}
 
 	};
-
+	this.flipCulling = false;
 	this.setMaterialFaces = function ( material ) {
 
 		var doubleSided = material.side === THREE.DoubleSide;
 		var flipSided = material.side === THREE.BackSide;
-
+		if(this.flipCulling)
+			flipSided = material.side === THREE.FrontSide;
 		if ( _oldDoubleSided !== doubleSided ) {
 
 			if ( doubleSided ) {
@@ -5584,7 +5597,17 @@ THREE.WebGLRenderer = function ( parameters ) {
 				_gl.blendEquation( _gl.FUNC_ADD );
 				_gl.blendFunc( _gl.ZERO, _gl.ONE_MINUS_SRC_COLOR );
 
-			} else if ( blending === THREE.MultiplyBlending ) {
+			} 
+			else if ( blending === 9 ) {
+
+				// TODO: Find blendFuncSeparate() combination
+				_gl.enable( _gl.BLEND );
+				_gl.blendEquationSeparate( _gl.FUNC_ADD, _gl.FUNC_ADD );
+				_gl.blendFuncSeparate( _gl.ONE, _gl.ZERO, _gl.ONE, _gl.ZERO );
+
+
+			} 
+			else if ( blending === THREE.MultiplyBlending ) {
 
 				// TODO: Find blendFuncSeparate() combination
 				_gl.enable( _gl.BLEND );
@@ -5703,7 +5726,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 			var mipmap, mipmaps = texture.mipmaps;
 
-			if ( texture instanceof THREE.DataTexture ) {
+			if (texture instanceof THREE.DataTexture || (texture.image && texture.image.data)) {
 
 				// use manually created mipmaps if available
 				// if there are no manual mipmaps
@@ -5726,7 +5749,7 @@ THREE.WebGLRenderer = function ( parameters ) {
 
 				}
 
-			} else if ( texture instanceof THREE.CompressedTexture ) {
+			} else if ( texture instanceof THREE.CompressedTexture || texture.isActuallyCompressed === true ) {
 
 				for ( var i = 0, il = mipmaps.length; i < il; i ++ ) {
 

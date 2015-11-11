@@ -45,7 +45,13 @@ THREE.UniformsLib = {
 		"fogDensity" : { type: "f", value: 0.00025 },
 		"fogNear" : { type: "f", value: 1 },
 		"fogFar" : { type: "f", value: 2000 },
-		"fogColor" : { type: "c", value: new THREE.Color( 0xffffff ) }
+		"fogColor" : { type: "c", value: new THREE.Color( 0xffffff ) },
+		"vAtmosphereColor" : { type: "c", value: new THREE.Color( 0xffffff ) },
+		"vHorizonColor" : { type: "c", value: new THREE.Color( 0xffffff ) },
+		"vApexColor" : { type: "c", value: new THREE.Color( 0xffffff ) },
+		"vFalloff" : { type: "f", value: 20 },
+		"vFalloffStart" : { type: "f", value: 1 },
+		"vAtmosphereDensity" : { type: "f", value: .0005 },
 
 	},
 

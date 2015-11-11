@@ -11,7 +11,8 @@
  * @author WestLangley / http://github.com/WestLangley
  */
 
-
+var temp_v1;
+var temp_m;
 THREE.Matrix4 = function ( n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 ) {
 
 	this.elements = new Float32Array( 16 );
@@ -118,6 +119,61 @@ THREE.Matrix4.prototype = {
 		};
 
 	}(),
+	  orthogonalize: function(p) {
+
+
+
+        temp_m.copy(this)
+
+        var te = this.elements;
+        var me = temp_m.elements;
+
+        
+
+        var scaleX = 1 / Math.sqrt(me[0] * me[0] + me[1] * me[1] + me[2] * me[2]);
+        var scaleY = 1 / Math.sqrt(me[4] * me[4] + me[5] * me[5] + me[6] * me[6]);
+        var scaleZ = 1 / Math.sqrt(me[8] * me[8] + me[9] * me[9] + me[10] * me[10]);
+
+
+        if (p) {
+            var pe = p.elements;
+
+            var px = 1 / Math.sqrt(pe[0] * pe[0] + pe[1] * pe[1] + pe[2] * pe[2]);
+        	var py = 1 / Math.sqrt(pe[4] * pe[4] + pe[5] * pe[5] + pe[6] * pe[6]);
+        	var pz = 1 / Math.sqrt(pe[8] * pe[8] + pe[9] * pe[9] + pe[10] * pe[10]);
+
+            te[0] = me[0] * scaleX * px;
+            te[1] = me[1] * scaleX * px;
+            te[2] = me[2] * scaleX * px;
+
+            te[4] = me[4] * scaleY * py;
+            te[5] = me[5] * scaleY * py;
+            te[6] = me[6] * scaleY * py;
+
+            te[8] = me[8] * scaleZ * pz;
+            te[9] = me[9] * scaleZ * pz;
+            te[10] = me[10] * scaleZ * pz;
+        } else {
+            te[0] = me[0] * scaleX;
+            te[1] = me[1] * scaleX;
+            te[2] = me[2] * scaleX;
+
+            te[4] = me[4] * scaleY;
+            te[5] = me[5] * scaleY;
+            te[6] = me[6] * scaleY;
+
+            te[8] = me[8] * scaleZ;
+            te[9] = me[9] * scaleZ;
+            te[10] = me[10] * scaleZ;
+        }
+        te[11] = me[11];
+        te[12] = me[12];
+        te[13] = me[13];
+
+        return this;
+
+
+    },
 
 	makeRotationFromEuler: function ( euler ) {
 

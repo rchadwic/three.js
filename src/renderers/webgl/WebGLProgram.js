@@ -105,10 +105,11 @@ THREE.WebGLProgram = ( function () {
 
 			prefix_vertex = [
 
+				
+				customDefines,
 				"precision " + parameters.precision + " float;",
 				"precision " + parameters.precision + " int;",
 
-				customDefines,
 
 				parameters.supportsVertexTextures ? "#define VERTEX_TEXTURES" : "",
 
@@ -209,10 +210,11 @@ THREE.WebGLProgram = ( function () {
 
 			prefix_fragment = [
 
+				( parameters.bumpMap || parameters.normalMap ) ? "#extension GL_OES_standard_derivatives : enable" : "",
 				"precision " + parameters.precision + " float;",
 				"precision " + parameters.precision + " int;",
 
-				( parameters.bumpMap || parameters.normalMap ) ? "#extension GL_OES_standard_derivatives : enable" : "",
+			
 
 				customDefines,
 

@@ -2,6 +2,8 @@
  * @author bhouston / http://exocortex.com
  */
 
+temp_v1 = new THREE.Vector3();
+temp_m = new THREE.Matrix4();
 THREE.Ray = function ( origin, direction ) {
 
 	this.origin = ( origin !== undefined ) ? origin : new THREE.Vector3();

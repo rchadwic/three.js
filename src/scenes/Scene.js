@@ -16,6 +16,8 @@ THREE.Scene = function () {
 
 	this.__objectsAdded = [];
 	this.__objectsRemoved = [];
+	this.__skins = [];
+	this.__pointclouds = [];
 
 };
 
@@ -23,6 +25,14 @@ THREE.Scene.prototype = Object.create( THREE.Object3D.prototype );
 
 THREE.Scene.prototype.__addObject = function ( object ) {
 
+	if ( object instanceof THREE.SkinnedMesh )
+	{
+		this.__skins.push(object);
+	}
+	if ( object instanceof THREE.PointCloud )
+	{
+		this.__pointclouds.push(object);
+	}
 	if ( object instanceof THREE.Light ) {
 
 		if ( this.__lights.indexOf( object ) === - 1 ) {
@@ -66,6 +76,14 @@ THREE.Scene.prototype.__addObject = function ( object ) {
 
 THREE.Scene.prototype.__removeObject = function ( object ) {
 
+	if ( object instanceof THREE.SkinnedMesh )
+	{
+		this.__skins.splice(this.__skins.indexOf(object),1);
+	}
+	if ( object instanceof THREE.PointCloud )
+	{
+		this.__pointclouds.splice(this.__pointclouds.indexOf(object),1);
+	}
 	if ( object instanceof THREE.Light ) {
 
 		var i = this.__lights.indexOf( object );

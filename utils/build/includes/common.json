@@ -133,6 +133,14 @@
 	"src/renderers/shaders/ShaderChunk/logdepthbuf_pars_fragment.glsl",
 	"src/renderers/shaders/ShaderChunk/alphamap_fragment.glsl",
 	"src/renderers/shaders/ShaderChunk/alphamap_pars_fragment.glsl",
+
+
+"src/renderers/shaders/ShaderChunk/shadowmap_fragment_basic.glsl",
+"src/renderers/shaders/ShaderChunk/sphericalHarmonicAmbient_fragment.glsl",
+"src/renderers/shaders/ShaderChunk/sphericalHarmonicAmbient_pars_fragment.glsl",
+"src/renderers/shaders/ShaderChunk/sphericalHarmonicAmbient_vertex.glsl",
+"src/renderers/shaders/ShaderChunk/sphericalHarmonicAmbient_pars_vertex.glsl",
+
 	"src/renderers/shaders/UniformsUtils.js",
 	"src/renderers/shaders/UniformsLib.js",
 	"src/renderers/shaders/ShaderLib.js",

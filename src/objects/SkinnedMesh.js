@@ -27,9 +27,9 @@ THREE.SkinnedMesh = function ( geometry, material, useVertexTexture ) {
 
 			gbone = this.geometry.bones[ b ];
 
-			p = gbone.pos;
-			q = gbone.rotq;
-			s = gbone.scl;
+			p = gbone.pos || gbone.position;
+			q = gbone.rotq || gbone.rotation;
+			s = gbone.scl || gbone.scale;
 
 			bone = new THREE.Bone( this );
 			bones.push( bone );
@@ -55,8 +55,10 @@ THREE.SkinnedMesh = function ( geometry, material, useVertexTexture ) {
 			gbone = this.geometry.bones[ b ];
 
 			if ( gbone.parent !== - 1 ) {
-
-				bones[ gbone.parent ].add( bones[ b ] );
+				if(gbone.parent.add)
+					gbone.parent.add( bones[ b ] );
+				else
+					bones[ gbone.parent ].add( bones[ b ] );
 
 			} else {
 
@@ -71,7 +73,7 @@ THREE.SkinnedMesh = function ( geometry, material, useVertexTexture ) {
 	this.normalizeSkinWeights();
 
 	this.updateMatrixWorld( true );
-	this.bind( new THREE.Skeleton( bones, undefined, useVertexTexture ) );
+	this.bind( new THREE.Skeleton( bones, this.geometry.boneInverses || undefined, useVertexTexture ) );
 
 };
 

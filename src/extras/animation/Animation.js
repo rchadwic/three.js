@@ -18,9 +18,146 @@ THREE.Animation = function ( root, data ) {
 	this.weight = 0;
 
 	this.interpolationType = THREE.AnimationHandler.LINEAR;
-
+	this.lastKey = null;;
 };
 
+
+THREE.Animation.prototype.debug = function(size) {
+
+    size = size || .1;
+    var debugobjects = [];
+    var debugroot;
+    var walk = function(bone, debugparent) {
+
+        var debug = new THREE.Mesh(new THREE.CubeGeometry(size, size, size));
+
+        if (!debugroot) debugroot = debug;
+        debug.matrixAutoUpdate = false;
+        debug.matrix.copy(bone.matrix);
+        debug.bone = bone;
+        bone.debugobject = debug;
+
+        debugobjects.push(debug);
+
+        var parentbonepos = (new THREE.Vector3()).getPositionFromMatrix(debug.matrix);
+        parentbonepos.x = Math.abs(parentbonepos.x + 1);
+        parentbonepos.y = Math.abs(parentbonepos.y + 1);
+        parentbonepos.z = Math.abs(parentbonepos.z + 1);
+
+        for (var i = 0; i < bone.children.length; i++) {
+            walk(bone.children[i], debug);
+        }
+
+
+        debugparent.add(debug);
+    }
+
+    walk(this.root.children[0], this.root);
+
+    this.debugobjects = debugobjects;
+    this.debugroot = debugroot;
+}
+
+var tempAniPos = new THREE.Vector3();
+var tempAniScale = new THREE.Vector3(1,1,1);
+var tempAniQuat = new THREE.Quaternion();
+var tempAniMatrix = new THREE.Matrix4();
+THREE.Animation.prototype.setKey = function(keyf) {
+
+    if (!this.data) return;
+    if (this.lastKey === keyf) return;
+    this.lastKey = keyf;
+
+    var l = keyf - Math.floor(keyf);
+    var l2 = 1 - l;
+
+    for (var h = 0, hl = this.data.hierarchy.length; h < hl; h++) {
+        var object = this.hierarchy[h];
+        var key = this.data.hierarchy[h].keys[Math.floor(keyf)];
+        var key2 = this.data.hierarchy[h].keys[Math.floor(keyf + 1)];
+
+        object.matrixAutoUpdate = false;
+        //object.matrix.copy(key.matrix);
+        //object.updateMatrixWorld();
+        //object.matrixWorldNeedsUpdate = true;
+
+        if (key && key2) {
+
+/*
+ key.parentspacePos = new THREE.Vector3();
+            key.parentspaceScl = new THREE.Vector3();
+            key.parentspaceRot = new THREE.Quaternion()
+            */
+        	var keypos =  key.parentspacePos || key.pos;
+        	var keyrot =  key.parentspaceRot || key.rot;
+      //  	var keyscl =  key.parentspaceScl || key.scl;
+
+        	var key2pos =  key2.parentspacePos || key2.pos;
+        	var key2rot =  key2.parentspaceRot || key2.rot;
+        //	var key2scl =  key2.parentspaceScl || key2.scl;
+
+            tempAniPos.x = keypos[0] * l2 + key2pos[0] * l;
+            tempAniPos.y = keypos[1] * l2 + key2pos[1] * l;
+            tempAniPos.z = keypos[2] * l2 + key2pos[2] * l;
+
+       //     tempAniScale.x = keyscl[0] * l2 + key2scl[0] * l;
+       //     tempAniScale.y = keyscl[1] * l2 + key2scl[1] * l;
+       //     tempAniScale.z = keyscl[2] * l2 + key2scl[2] * l;
+
+            tempAniQuat.set(keyrot.x, keyrot.y, keyrot.z, keyrot.w);
+            tempAniQuat.slerp(key2rot, l);
+
+            tempAniMatrix.compose(tempAniPos,tempAniQuat,tempAniScale);
+            object.matrix.copy(tempAniMatrix);
+            object.matrixWorldNeedsUpdate = true;
+            //object.matrixWorld.multiplyMatrices(this.root.matrixWorld,object.matrix);
+
+
+
+            if (object.debugobject) {
+                object.debugobject.matrix.copy(object.matrix);
+                object.debugobject.updateMatrixWorld();
+            }
+        } else if (key) {
+
+        	var keypos =  key.parentspacePos || key.pos;
+        	var keyrot =  key.parentspaceRot || key.rot;
+        	var keyscl =  key.parentspaceScl || key.scl;
+
+            object.position.x = keypos[0]
+            object.position.y = keypos[1]
+            object.position.z = keypos[2]
+
+            object.scale.x = keyscl[0]
+            object.scale.y = keyscl[1]
+            object.scale.z = keyscl[2]
+
+            object.quaternion.w = keyrot.w;
+            object.quaternion.y = keyrot.y;
+            object.quaternion.z = keyrot.z;
+            object.quaternion.x = keyrot.x;
+
+            //the object matrix is now directly in the space of this.root. No need to walk whole tree updating 
+            //matrix
+			object.updateMatrix();
+            //object.matrixWorld.multiplyMatrices(this.root.matrixWorld,object.matrix);
+
+            
+            if (object.debugobject) {
+                object.debugobject.matrix.copy(object.matrix);
+                object.debugobject.updateMatrixWorld();
+            }
+
+        }
+
+    }
+
+    if (this.debugroot) {
+        this.debugroot.updateMatrixWorld()
+    }
+
+
+}
 
 THREE.Animation.prototype.keyTypes = [ "pos", "rot", "scl" ];
 
